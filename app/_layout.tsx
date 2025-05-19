@@ -1,29 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { Tabs } from "expo-router";
+import { Button, View } from 'react-native';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Tabs 
+      screenOptions={{
+        tabBarActiveBackgroundColor: '#ADD8E6',
+        tabBarActiveTintColor: '#000',
+      }
+      }
+    >
+      <Tabs.Screen 
+        name="compra" 
+        options={{ 
+          title: "Compra",
+          tabBarIcon: () => <FontAwesome6 name="list-check" size={24} color="black" />
+        }} 
+      />
+      <Tabs.Screen 
+        name="lista" 
+        options={{ 
+          title: "Lista" ,
+          tabBarIcon: () => <FontAwesome5 name="clipboard-list" size={24} color="black" />
+        }} 
+      />
+      <Tabs.Screen 
+        name="dispensa" 
+        options={{ 
+          title: "Dispensa",
+          headerRight: () => (
+            <View style={{ paddingRight: 10 }}>
+              <Button title="+" />
+            </View>
+          ),
+          tabBarIcon: () => <FontAwesome5 name="list-ul" size={24} color="black" />,
+        }} 
+      />
+    </Tabs>
   );
 }
