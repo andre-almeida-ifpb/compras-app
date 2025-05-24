@@ -2,7 +2,18 @@ import { SectionList, StyleSheet, Text, View } from "react-native";
 import { AdvancedCheckbox } from 'react-native-advanced-checkbox';
 import dadosDispensa from "../dados/dispensa";
 import dadosLista from "../dados/lista";
-import { ItemLista, Lista } from "./lista";
+
+export interface ItemLista {
+    id: number;
+    nome: string;
+    qtd: number;
+}
+
+export interface Lista {
+    id: number;
+    nome: string;
+    data: ItemLista[];
+}
 
 export default function Compra() {
 

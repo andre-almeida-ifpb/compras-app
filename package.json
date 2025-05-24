@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prestart": "npm run typecheck",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
