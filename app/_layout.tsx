@@ -1,11 +1,12 @@
+import { CompraProvider } from '@/contexto/ContextoCompra';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs } from "expo-router";
-import { Button, View } from 'react-native';
 
 export default function RootLayout() {
 
   return (
+    <CompraProvider>
     <Tabs       
       screenOptions={{
         tabBarActiveBackgroundColor: '#ADD8E6',
@@ -31,14 +32,10 @@ export default function RootLayout() {
         name="dispensa" 
         options={{ 
           title: "Dispensa",
-          headerRight: () => (
-            <View style={{ paddingRight: 10 }}>
-              <Button title="+" />
-            </View>
-          ),
           tabBarIcon: () => <FontAwesome5 name="list-ul" size={24} color="black" />,
         }} 
       />
     </Tabs>
+    </CompraProvider>
   );
 }

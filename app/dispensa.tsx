@@ -1,12 +1,14 @@
+import { IItemDispensa, useCompra } from '@/contexto/ContextoCompra';
 import Feather from '@expo/vector-icons/Feather';
 import { Button, SectionList, StyleSheet, Text, View } from "react-native";
-import dispensa, { ItemDispensa } from "../dados/dispensa";
 
 interface PropsItem {
-  item: ItemDispensa;
+  item: IItemDispensa;
 }
 
 export default function Dispensa() {
+
+  const {dispensa} = useCompra();
 
   function RenderItem(props: PropsItem) {
     const { item } = props;
