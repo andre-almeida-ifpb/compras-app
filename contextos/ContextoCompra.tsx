@@ -170,6 +170,6 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
 
 export const useCompra = () => {
   const context = useContext(ContextoCompra);
-  if (!context) throw new Error('useShopping deve ser usado dentro de um ShoppingProvider');
+  if (!context) throw new Error('useCompra deve ser usado dentro de um CompraProvider');
   return context;
 };
