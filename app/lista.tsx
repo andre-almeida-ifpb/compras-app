@@ -1,4 +1,5 @@
 import { IItemDispensa, useCompra } from "@/contextos/ContextoCompra";
+import { memo, useCallback } from "react";
 import { Button, SectionList, StyleSheet, Text, View } from "react-native";
 
 export default function Lista() {
@@ -8,7 +9,7 @@ export default function Lista() {
     incrementaQuantidadeLista,
     decrementaQuantidadeLista} = useCompra();
 
-  function RenderItem(props: { item: IItemDispensa }) {
+  const RenderItem = memo((props: { item: IItemDispensa }) => {
     const { item } = props;
     
     return (
@@ -22,7 +23,12 @@ export default function Lista() {
         <Button title="+" onPress={ () => incrementaQuantidadeLista(item.id) }/>
       </View>
     );
-  }
+  });
+
+  const renderItem = useCallback(
+    ({ item }: { item: IItemDispensa }) => <RenderItem item={item} />,
+    [dispensa]
+  );
 
   function RenderSection(props: { id: number; nome: string }) {
     const { id, nome } = props;
@@ -38,8 +44,12 @@ export default function Lista() {
     <SectionList
       sections={dispensa}
       keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => <RenderItem item={item} />}
+      renderItem={renderItem}
       renderSectionHeader={({ section: { id, nome } }) => <RenderSection id={id} nome={nome} />}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      windowSize={5}
+      removeClippedSubviews={true}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { IItemDispensa, useCompra } from '@/contextos/ContextoCompra';
 import Feather from '@expo/vector-icons/Feather';
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Alert, Button, Modal, SectionList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 interface PropsItem {
@@ -24,7 +24,7 @@ export default function Dispensa() {
     incrementaQuantidadeDispensa,
     decrementaQuantidadeDispensa} = useCompra();
 
-  function RenderItem(props: PropsItem) {
+  const RenderItem = memo((props: PropsItem) => {
     const { item } = props;
     
     return (
@@ -40,7 +40,12 @@ export default function Dispensa() {
         <Button title="+" onPress={ () => incrementaQuantidadeDispensa(item.id) }/>
       </View>
     );
-  }
+  });
+
+  const renderItem = useCallback(
+    ({ item }: { item: IItemDispensa }) => <RenderItem item={item} />,
+    [dispensa]
+  );
 
   function RenderSection(props: { id: number; nome: string }) {
     const { id, nome } = props;
@@ -89,9 +94,13 @@ export default function Dispensa() {
       <SectionList
         sections={dispensa}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <RenderItem item={item} />}
+        renderItem={renderItem}
         renderSectionHeader={({ section: { id, nome } }) => <RenderSection id={id} nome={nome} />}
         ListHeaderComponent={ () => <Button title="Adicionar seção" onPress={ () => setModalSecaoVisible(true) } /> }        
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
       />
       <Modal
           animationType="slide"
