@@ -1,5 +1,6 @@
 import dispensaOriginal from '@/dados/dispensa';
-import React, { createContext, useContext, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 export interface IItemDispensa {
     id: number;
@@ -31,6 +32,37 @@ const ContextoCompra = createContext<IContextoCompra | undefined>(undefined);
 
 export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
     const  [dispensa, setDispensa] = useState<ISecao[]>(dispensaOriginal);
+    const STORAGE_KEY = '@app_state';
+
+    // Carrega o estado salvo ao iniciar
+    useEffect(() => {
+        const loadState = async () => {
+            try {
+                const estadoSalvo = await AsyncStorage.getItem(STORAGE_KEY);
+                if (estadoSalvo) {
+                    setDispensa(JSON.parse(estadoSalvo));
+                }
+            } catch (error) {
+                console.error('Erro ao carregar estado:', error);
+            }
+        };
+        loadState();
+    }, []);
+
+    // Salva o estado sempre que ele muda
+    useEffect(() => {
+        const saveState = async () => {
+            try {
+                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dispensa));
+            } catch (error) {
+                console.error('Erro ao salvar estado:', error);
+            }
+        };
+        
+        if (dispensa !== null) {
+            saveState();
+        }
+    }, [dispensa]);
 
     const adicionaSecao = (secao: string) => {
         let novoId: number = 1;
