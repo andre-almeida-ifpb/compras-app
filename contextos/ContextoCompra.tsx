@@ -24,6 +24,7 @@ interface IContextoCompra {
     decrementaQuantidadeDispensa: (id: number) => void;
     incrementaQuantidadeLista: (id: number) => void;
     decrementaQuantidadeLista: (id: number) => void;
+    removeItensLista: (ids: number[]) => void;
 }
 
 const ContextoCompra = createContext<IContextoCompra | undefined>(undefined);
@@ -151,6 +152,24 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
         setDispensa(novaDispensa);
     }
 
+    const removeItensLista = (ids: number[]) => {
+        let novaDispensa: ISecao[] = [];
+
+        for (let i=0; i < dispensa.length; i++) {
+            let novoData: IItemDispensa[] = [];
+            for (let j=0; j < dispensa[i].data.length; j++) {
+                if (ids.includes(dispensa[i].data[j].id)) {
+                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa, qtdLista: 0 })
+                } else {
+                    novoData.push(dispensa[i].data[j]);
+                }
+            }
+            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
+        }
+
+        setDispensa(novaDispensa);
+    }
+
     return (
         <ContextoCompra.Provider 
             value={{
@@ -162,7 +181,8 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
                 incrementaQuantidadeDispensa, 
                 decrementaQuantidadeDispensa,
                 incrementaQuantidadeLista,
-                decrementaQuantidadeLista}}>
+                decrementaQuantidadeLista,
+                removeItensLista}}>
             {children}
         </ContextoCompra.Provider>
     );

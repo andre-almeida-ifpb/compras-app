@@ -1,6 +1,6 @@
 import { useCompra } from "@/contextos/ContextoCompra";
 import { useEffect, useState } from "react";
-import { SectionList, StyleSheet, Text, View } from "react-native";
+import { Button, SectionList, StyleSheet, Text, View } from "react-native";
 import { AdvancedCheckbox } from 'react-native-advanced-checkbox';
 
 export interface IItemLista {
@@ -21,7 +21,8 @@ export default function Compra() {
   const [lista, setLista] = useState<ISecao[]>([]);
 
   const {
-      dispensa} = useCompra();
+      dispensa,
+      removeItensLista} = useCompra();
 
   useEffect( () => {
 
@@ -92,12 +93,27 @@ export default function Compra() {
 
   }
 
+  function finalizaCompra() {
+    let ids: number[] = [];
+
+    for (let i=0; i < lista.length; i++) {
+      for (let j=0; j < lista[i].data.length; j++) {
+        if (lista[i].data[j].pego) {
+          ids.push(lista[i].data[j].id);
+        }
+      }
+    }
+
+    removeItensLista(ids);
+  }
+
   return (
     <SectionList
       sections={lista}
       keyExtractor={(item) => item.id.toString()}
       renderItem={({ item }) => <RenderItem item={item} />}
       renderSectionHeader={({ section: { id, nome } }) => <RenderSection id={id} nome={nome} />}
+      ListHeaderComponent={ () => <Button title="Finaliza compra" onPress={ () => finalizaCompra() } /> }
     />
   );
 }
