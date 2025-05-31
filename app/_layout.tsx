@@ -1,4 +1,4 @@
-import { CompraProvider } from '@/contexto/ContextoCompra';
+import { CompraProvider } from '@/contextos/ContextoCompra';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs } from "expo-router";

@@ -1,59 +1,63 @@
+import { useCompra } from "@/contextos/ContextoCompra";
+import { useEffect, useState } from "react";
 import { SectionList, StyleSheet, Text, View } from "react-native";
 import { AdvancedCheckbox } from 'react-native-advanced-checkbox';
-import dadosDispensa from "../dados/dispensa";
-import dadosLista from "../dados/lista";
 
-export interface ItemLista {
+export interface IItemLista {
     id: number;
     nome: string;
+    pego: boolean;
     qtd: number;
 }
 
-export interface Lista {
+export interface ISecao {
     id: number;
     nome: string;
-    data: ItemLista[];
+    data: IItemLista[];
 }
 
 export default function Compra() {
 
-  let lista: Lista[] = [];
+  const [lista, setLista] = useState<ISecao[]>([]);
 
-  for (let i = 0; i < dadosDispensa.length; i++) {
-    const section = dadosDispensa[i];
-    let data = section.data.map((item) => {
-      let itemLista = dadosLista.find( itemLista => itemLista.id == item.id );
-      let quantidade = 0;
-      if (itemLista != undefined) {
-        quantidade = itemLista.qtd;
-      }
-      return {
-        id: item.id,
-        nome: item.nome,
-        qtd: quantidade,
-      }
-    });
+  const {
+      dispensa} = useCompra();
 
-    data = data.filter( item => item.qtd > 0 );
+  useEffect( () => {
 
-    lista.push({
-      id: section.id,
-      nome: section.nome,
-      data: data,
-    });
-  }
+    let listaNova: ISecao[] = [];
 
-  function RenderItem(props: { item: ItemLista }) {
+    for (let i=0; i < dispensa.length; i++) {
+      let newData: IItemLista[] = [];
+      for (let j=0; j < dispensa[i].data.length; j++) {
+        if (dispensa[i].data[j].qtdLista > 0) {
+          newData.push({id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, pego: false, qtd: dispensa[i].data[j].qtdLista});
+        }        
+      }        
+      listaNova.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: newData});
+    }
+
+    setLista(listaNova);
+
+  }, [dispensa]);
+
+  function RenderItem(props: { item: IItemLista }) {
     const { item } = props;
     
     return (
-      <View style={ styles.item }>
+      <View style={ [styles.item, {backgroundColor: item.pego ? '#dddddd' : '#bfddf3'}] }>
         <AdvancedCheckbox
+          value={item.pego}
+          onValueChange={ () => redefinirItem(item.id) }
           label={item.nome}
-          checkedColor="#007AFF"
-          uncheckedColor="#ccc"
+          checkedColor="green"
+          uncheckedColor="black"
           size={24}
         />
+        <View style={{ flex: 1 }} />
+        <View style={{ backgroundColor: '#00a8ff', padding: 5, paddingHorizontal: 10, borderRadius: 30, marginRight: 10 }}>
+          <Text style={{ color: 'white'}}>{item.qtd}</Text>
+        </View>
       </View>
     );
   }
@@ -66,6 +70,26 @@ export default function Compra() {
         <Text style={ styles.sectionText }>{nome}</Text>
       </View>
       );
+  }
+
+  function redefinirItem( id: number ) {
+
+    let listaNova: ISecao[] = [];
+
+    for (let i=0; i < lista.length; i++) {
+      let newData: IItemLista[] = [];
+      for (let j=0; j < lista[i].data.length; j++) {
+        if (lista[i].data[j].id == id) {
+          newData.push({id: lista[i].data[j].id, nome: lista[i].data[j].nome, pego: !lista[i].data[j].pego, qtd: lista[i].data[j].qtd});
+        } else {
+          newData.push(lista[i].data[j]);
+        }
+      }        
+      listaNova.push({ id: lista[i].id, nome: lista[i].nome, data: newData});
+    }
+
+    setLista(listaNova);
+
   }
 
   return (
@@ -83,6 +107,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     padding: 10,
     backgroundColor: "#ADD8E6",
+    marginVertical: 1
   },
 
   sectionText: {
