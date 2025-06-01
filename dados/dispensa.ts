@@ -330,6 +330,6 @@ const dispensa: ISecao[] = [
             { id: 305, nome: "Tareco", qtdDispensa: 0, qtdLista: 0 },
         ]
     },
-]
+];
 
 export default dispensa;

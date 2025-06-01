@@ -1,6 +1,6 @@
 import dispensaOriginal from '@/dados/dispensa';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export interface IItemDispensa {
     id: number;
@@ -32,7 +32,7 @@ const ContextoCompra = createContext<IContextoCompra | undefined>(undefined);
 
 export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
     const  [dispensa, setDispensa] = useState<ISecao[]>(dispensaOriginal);
-    const STORAGE_KEY = '@app_state';
+    const STORAGE_KEY = '@app/Compras';
 
     // Carrega o estado salvo ao iniciar
     useEffect(() => {
@@ -40,7 +40,8 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
             try {
                 const estadoSalvo = await AsyncStorage.getItem(STORAGE_KEY);
                 if (estadoSalvo) {
-                    setDispensa(JSON.parse(estadoSalvo));
+                    const parsed = JSON.parse(estadoSalvo);
+                    setDispensa(parsed);
                 }
             } catch (error) {
                 console.error('Erro ao carregar estado:', error);
@@ -52,159 +53,124 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
     // Salva o estado sempre que ele muda
     useEffect(() => {
         const saveState = async () => {
-            try {
+            try {                
                 await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dispensa));
             } catch (error) {
                 console.error('Erro ao salvar estado:', error);
             }
         };
         
-        if (dispensa !== null) {
-            saveState();
-        }
+        saveState();        
     }, [dispensa]);
 
-    const adicionaSecao = (secao: string) => {
-        let novoId: number = 1;
-        for (let i=0; i < dispensa.length; i++) {
-            if (dispensa[i].id >= novoId) {
-                novoId = dispensa[i].id+1;
-            }
-        }
+    const adicionaSecao = useCallback((secao: string) => {
+        setDispensa(prev => {
+            let maxId = Math.max(...prev.map(s => s.id), 0);                    
+            let novaDispensa = [...prev, {id: maxId+1, nome: secao, data: []}];
+            novaDispensa.sort( (a,b) => a.nome.localeCompare(b.nome) );
 
-        setDispensa(prev => [...prev, {id: novoId, nome: secao, data: []}]);
-    }
+            return novaDispensa;
+        });
+    }, []);
 
-    const removeSecao = (id: number) => {
-        setDispensa(dispensa.filter( item => item.id != id ));
-    }
+    const removeSecao = useCallback((id: number) => {
+        setDispensa(prev => {
+            return prev.filter( item => item.id != id );
+        });
+    }, []);
 
-    const adicionaItem = (idSecao: number, nomeItem: string) => {
-        let novoId: number = 1;
-        for (let i=0; i < dispensa.length; i++) {
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (dispensa[i].data[j].id >= novoId) {
-                    novoId = dispensa[i].data[j].id + 1;
-                }
-            }
-        }
+    const adicionaItem = useCallback((idSecao: number, nomeItem: string) => {
+        setDispensa( prev => {
+            let maxId = Math.max(...prev.flatMap(item => item.data.map(d => d.id)), 0);
 
-        let novaDispensa: ISecao[] = [];
-
-        for (let i=0; i < dispensa.length; i++) {
-            if (dispensa[i].id == idSecao) {
-                novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: [...dispensa[i].data, {id: novoId, nome: nomeItem, qtdDispensa: 0, qtdLista: 0}] });
-            } else {
-                novaDispensa.push(dispensa[i]);
-            }
-        }
-
-        setDispensa(prev => novaDispensa);
-    }
-
-    const removeItem = (id: number) => {
-        let novaDispensa = [];
-
-        for (let i=0; i < dispensa.length; i++) {
-            novaDispensa.push({id: dispensa[i].id, nome: dispensa[i].nome, data: dispensa[i].data.filter ( item => item.id != id)});
-        }
-
-        setDispensa(novaDispensa);
-    }
-
-    const incrementaQuantidadeDispensa = (id: number) => {
-        let novaDispensa: ISecao[] = [];
-
-        for (let i=0; i < dispensa.length; i++) {
-            let novoData: IItemDispensa[] = [];
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (dispensa[i].data[j].id == id) {
-                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa + 1, qtdLista: dispensa[i].data[j].qtdLista })
+            let novaDispensa: ISecao[] = prev.map( secao => {
+                if (secao.id == idSecao) {
+                    let newData = [
+                        ...secao.data,
+                        {id: maxId+1, nome: nomeItem, qtdDispensa: 0, qtdLista: 0}
+                    ];
+                    newData.sort( (a,b) => a.nome.localeCompare(b.nome) );
+                    return { ...secao, data: newData };
                 } else {
-                    novoData.push(dispensa[i].data[j]);
-                }
-            }
-            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
-        }
+                    return secao;
+                }            
+            });
+            
+            return novaDispensa;
+        });
+    }, []);
 
-        setDispensa(novaDispensa);
-    }
+    const removeItem = useCallback((id: number) => {
+        setDispensa( prev => {
+            let novaDispensa: ISecao[] = prev.map( secao => ({
+                ...secao,
+                data: secao.data.filter( item => item.id != id )
+            }));
 
-    const decrementaQuantidadeDispensa = (id: number) => {
-        let novaDispensa: ISecao[] = [];
+            return novaDispensa;
+        });
+    }, []);
 
-        for (let i=0; i < dispensa.length; i++) {
-            let novoData: IItemDispensa[] = [];
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (dispensa[i].data[j].id == id && dispensa[i].data[j].qtdDispensa > 0) {
-                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa - 1, qtdLista: dispensa[i].data[j].qtdLista })
-                } else {
-                    novoData.push(dispensa[i].data[j]);
-                }
-            }
-            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
-        }
+    const atualizarItem = useCallback((id: number, callback: (item: IItemDispensa) => IItemDispensa) => {
+        setDispensa( prev => {
+            const novaDispensa = prev.map(secao => ({
+                ...secao,
+                data: secao.data.map(item =>
+                    item.id === id ? callback(item) : item
+                )
+            }));
+            
+            return novaDispensa;
+        });
+    }, []);
 
-        setDispensa(novaDispensa);
-    }
+    const incrementaQuantidadeDispensa = useCallback((id: number) => {        
+        atualizarItem(id, item => ({
+            ...item,
+            qtdDispensa: item.qtdDispensa + 1,
+        }));
+    }, []);
 
-    const incrementaQuantidadeLista = (id: number) => {
-        let novaDispensa: ISecao[] = [];
+    const decrementaQuantidadeDispensa = useCallback((id: number) => {
+        atualizarItem(id, item => ({
+            ...item,
+            qtdDispensa:  Math.max(0, item.qtdDispensa - 1),
+        }));
+    }, []);
 
-        for (let i=0; i < dispensa.length; i++) {
-            let novoData: IItemDispensa[] = [];
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (dispensa[i].data[j].id == id) {
-                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa, qtdLista: dispensa[i].data[j].qtdLista + 1})
-                } else {
-                    novoData.push(dispensa[i].data[j]);
-                }
-            }
-            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
-        }
+    const incrementaQuantidadeLista = useCallback((id: number) => {
+        atualizarItem(id, item => ({
+            ...item,
+            qtdLista: item.qtdLista + 1,
+        }));
+    }, []);
 
-        setDispensa(novaDispensa);
-    }
+    const decrementaQuantidadeLista = useCallback((id: number) => {
+        atualizarItem(id, item => ({
+            ...item,
+            qtdLista:  Math.max(0, item.qtdLista - 1),
+        }));
+    }, []);
 
-    const decrementaQuantidadeLista = (id: number) => {
-        let novaDispensa: ISecao[] = [];
+    const removeItensLista = useCallback((ids: number[]) => {
+        setDispensa( prev => {
+            const idSet = new Set(ids);
 
-        for (let i=0; i < dispensa.length; i++) {
-            let novoData: IItemDispensa[] = [];
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (dispensa[i].data[j].id == id && dispensa[i].data[j].qtdLista > 0) {
-                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa, qtdLista: dispensa[i].data[j].qtdLista - 1 })
-                } else {
-                    novoData.push(dispensa[i].data[j]);
-                }
-            }
-            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
-        }
+            const novaDispensa = prev.map( secao => ({
+                ...secao,
+                data: secao.data.map( item => 
+                    idSet.has(item.id) ? ({
+                        ...item,
+                        qtdLista: 0
+                    }) : item
+                )
+            }));
+            
+            return novaDispensa;
+        });
+    }, []);
 
-        setDispensa(novaDispensa);
-    }
-
-    const removeItensLista = (ids: number[]) => {
-        let novaDispensa: ISecao[] = [];
-
-        for (let i=0; i < dispensa.length; i++) {
-            let novoData: IItemDispensa[] = [];
-            for (let j=0; j < dispensa[i].data.length; j++) {
-                if (ids.includes(dispensa[i].data[j].id)) {
-                    novoData.push({ id: dispensa[i].data[j].id, nome: dispensa[i].data[j].nome, qtdDispensa: dispensa[i].data[j].qtdDispensa, qtdLista: 0 })
-                } else {
-                    novoData.push(dispensa[i].data[j]);
-                }
-            }
-            novaDispensa.push({ id: dispensa[i].id, nome: dispensa[i].nome, data: novoData })
-        }
-
-        setDispensa(novaDispensa);
-    }
-
-    return (
-        <ContextoCompra.Provider 
-            value={{
+    const value = useMemo( () => ({
                 dispensa,
                 adicionaSecao,
                 removeSecao,
@@ -214,7 +180,12 @@ export const CompraProvider: React.FC<{children: React.ReactNode}> = ({ children
                 decrementaQuantidadeDispensa,
                 incrementaQuantidadeLista,
                 decrementaQuantidadeLista,
-                removeItensLista}}>
+                removeItensLista
+    }), [dispensa]);
+
+    return (
+        <ContextoCompra.Provider 
+            value={value}>
             {children}
         </ContextoCompra.Provider>
     );
